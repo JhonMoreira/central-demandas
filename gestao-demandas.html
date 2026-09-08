@@ -591,18 +591,32 @@ function exportar(tipo){
 /* ============ EXCLUSÃO ============ */
 function askExcluir(id){
   const d=DB.demandas.find(x=>x.id===id);if(!d)return;
-  M(`<div class="mh"><h3>Excluir demanda</h3><button class="btn sm" onclick="closeM()">X</button></div>
+  M(`<div class="mh"><h3>🔐 Excluir demanda</h3><button class="btn sm" onclick="closeM()">X</button></div>
   <div class="mb">
-    <p>Você está prestes a excluir <b class="num">${d.id}</b> — <b>${esc(d.titulo)}</b>.</p>
+    <p>Excluir <b class="num">${d.id}</b> — <b>${esc(d.titulo)}</b>.</p>
     <p style="color:var(--slate);font-size:13px">A demanda some do painel, mas um log de auditoria fica salvo.</p>
-    <div style="background:#FDEDEC;border:1px solid #F6D5D2;border-radius:8px;padding:12px;font-size:12.5px;color:var(--atraso)">
-      Ação irreversível.
+    <div class="f" style="margin-top:8px">
+      <label>Senha de administrador</label>
+      <input type="password" id="senha_exc" placeholder="Digite a senha" onkeydown="if(event.key==='Enter')verificarSenhaExc('${id}')">
     </div>
+    <div id="exc_err" style="color:var(--atraso);font-size:12.5px;min-height:18px"></div>
   </div>
   <div class="mf">
     <button class="btn" onclick="closeM()">Cancelar</button>
-    <button class="btn" style="background:var(--atraso);border-color:var(--atraso);color:#fff" onclick="confirmarExclusao('${id}')">Excluir</button>
+    <button class="btn" style="background:var(--atraso);border-color:var(--atraso);color:#fff" onclick="verificarSenhaExc('${id}')">Excluir</button>
   </div>`,"sm");
+  setTimeout(()=>senha_exc.focus(),50);
+}
+
+function verificarSenhaExc(id){
+  if(document.getElementById("senha_exc").value === SENHA_ZERAR){
+    closeM();
+    confirmarExclusao(id);
+  } else {
+    document.getElementById("exc_err").textContent = "Senha incorreta. Tente novamente.";
+    document.getElementById("senha_exc").value = "";
+    document.getElementById("senha_exc").focus();
+  }
 }
 function confirmarExclusao(id){
   const d=DB.demandas.find(x=>x.id===id);if(!d)return;
@@ -614,21 +628,38 @@ function confirmarExclusao(id){
   DB.demandas=DB.demandas.filter(x=>x.id!==id);
   save();closeM();render();toast("Demanda "+id+" excluida — log salvo.");
 }
+// ══════════════════════════════════
+// SENHA DO ZERAR TUDO — troque aqui
+const SENHA_ZERAR = "dados2026";
+// ══════════════════════════════════
+
 function askZerarTudo(){
-  M(`<div class="mh"><h3>Zerar todos os dados</h3><button class="btn sm" onclick="closeM()">X</button></div>
+  M(`<div class="mh"><h3>🔐 Zerar todos os dados</h3><button class="btn sm" onclick="closeM()">X</button></div>
   <div class="mb">
-    <p>Remove todas as <b>${DB.demandas.length} demanda(s)</b> do painel de uma vez.</p>
-    <p style="color:var(--slate);font-size:13px">O log de auditoria fica salvo e pode ser consultado depois.</p>
-    <div style="background:#FDEDEC;border:1px solid #F6D5D2;border-radius:8px;padding:12px;font-size:12.5px;color:var(--atraso)">
-      Acao irreversivel. O sistema ficara zerado e pronto para uso real.
+    <p>Esta acao remove todas as <b>${DB.demandas.length} demanda(s)</b>. Apenas o administrador pode fazer isso.</p>
+    <div class="f" style="margin-top:8px">
+      <label>Senha de administrador</label>
+      <input type="password" id="senha_zerar" placeholder="Digite a senha" onkeydown="if(event.key==='Enter')verificarSenhaZerar()">
     </div>
-    <div class="f" style="margin-top:14px"><label>Digite CONFIRMAR para liberar o botao</label>
-    <input id="conf_input" oninput="document.getElementById('btn_zerar').disabled=this.value!='CONFIRMAR';document.getElementById('btn_zerar').style.opacity=this.value=='CONFIRMAR'?'1':'.4'" placeholder="CONFIRMAR"></div>
+    <div id="senha_err" style="color:var(--atraso);font-size:12.5px;min-height:18px"></div>
+    <p style="font-size:12px;color:var(--slate)">Um log de auditoria e salvo automaticamente antes de qualquer exclusao.</p>
   </div>
   <div class="mf">
     <button class="btn" onclick="closeM()">Cancelar</button>
-    <button id="btn_zerar" class="btn" style="background:var(--atraso);border-color:var(--atraso);color:#fff;opacity:.4" disabled onclick="confirmarZerar()">Zerar tudo</button>
+    <button class="btn" style="background:var(--atraso);border-color:var(--atraso);color:#fff" onclick="verificarSenhaZerar()">Confirmar</button>
   </div>`,"sm");
+  setTimeout(()=>senha_zerar.focus(),50);
+}
+
+function verificarSenhaZerar(){
+  if(document.getElementById("senha_zerar").value === SENHA_ZERAR){
+    closeM();
+    confirmarZerar();
+  } else {
+    document.getElementById("senha_err").textContent = "Senha incorreta. Tente novamente.";
+    document.getElementById("senha_zerar").value = "";
+    document.getElementById("senha_zerar").focus();
+  }
 }
 function confirmarZerar(){
   if(!DB.lixeira)DB.lixeira=[];
