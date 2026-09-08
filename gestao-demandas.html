@@ -1,0 +1,659 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Central de Demandas — Dados / Relacionamento</title>
+<style>
+:root{
+  --ink:#0F1B2D; --ink-2:#1D2C44; --slate:#5A6B84; --line:#E2E7EF; --bg:#F5F7FA; --card:#FFFFFF;
+  --exec:#0E9F8E; --pausa:#E0A33B; --atraso:#D4544C; --valid:#6C63C7; --ok:#3E8E5A; --novo:#7C8BA1;
+  --crit:#D4544C; --alta:#E0803B; --media:#3B82C4; --baixa:#7C8BA1;
+  --r:10px; --sh:0 1px 2px rgba(15,27,45,.06),0 6px 20px rgba(15,27,45,.05);
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.5 "Segoe UI",system-ui,-apple-system,sans-serif}
+.num{font-variant-numeric:tabular-nums;font-feature-settings:"tnum";font-family:"Segoe UI",ui-monospace,Consolas,monospace}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+#app{display:flex;min-height:100vh}
+aside{width:236px;flex:0 0 236px;background:var(--ink);color:#C9D4E4;display:flex;flex-direction:column;position:sticky;top:0;height:100vh}
+aside h1{font-size:15px;color:#fff;margin:0;letter-spacing:.3px}
+.brand{padding:20px 18px 14px;border-bottom:1px solid rgba(255,255,255,.08)}
+.brand small{color:#7E8FA8;font-size:11px;letter-spacing:1.4px;text-transform:uppercase}
+nav{padding:10px 10px;flex:1;overflow:auto}
+nav button{display:flex;gap:10px;align-items:center;width:100%;background:none;border:0;color:#C9D4E4;padding:9px 12px;border-radius:8px;text-align:left;font-size:13.5px}
+nav button:hover{background:rgba(255,255,255,.07);color:#fff}
+nav button.on{background:#243550;color:#fff;font-weight:600}
+nav .grp{color:#65799A;font-size:10.5px;letter-spacing:1.4px;text-transform:uppercase;padding:14px 12px 6px}
+.who{padding:12px;border-top:1px solid rgba(255,255,255,.08)}
+.who select{width:100%;background:#1B2A42;border:1px solid #2C3E5C;color:#DCE5F1;border-radius:8px;padding:7px 8px;font-size:12.5px}
+main{flex:1;min-width:0;display:flex;flex-direction:column}
+.topbar{position:sticky;top:0;z-index:30;background:#fff;border-bottom:1px solid var(--line);padding:10px 20px;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.topbar input.search{flex:1;min-width:180px;border:1px solid var(--line);border-radius:8px;padding:8px 12px;background:var(--bg)}
+.runbar{display:flex;align-items:center;gap:12px;background:#0E9F8E;color:#fff;border-radius:8px;padding:7px 12px;font-size:13px}
+.runbar.idle{background:#EDF1F6;color:var(--slate)}
+.runbar .t{font-size:16px;font-weight:700}
+.dot{width:8px;height:8px;border-radius:50%;background:#fff;animation:p 1.6s infinite}
+@keyframes p{50%{opacity:.25}}
+@media(prefers-reduced-motion:reduce){.dot{animation:none}}
+.wrap{padding:20px;flex:1}
+h2.page{margin:0 0 2px;font-size:20px;letter-spacing:-.2px}
+.sub{color:var(--slate);margin:0 0 18px;font-size:13px}
+.btn{border:1px solid var(--line);background:#fff;padding:8px 14px;border-radius:8px;font-weight:600;font-size:13px}
+.btn:hover{border-color:#C3CDDC}
+.btn.pri{background:var(--ink);border-color:var(--ink);color:#fff}
+.btn.go{background:var(--exec);border-color:var(--exec);color:#fff}
+.btn.warn{background:var(--pausa);border-color:var(--pausa);color:#3B2A05}
+.btn.ok{background:var(--ok);border-color:var(--ok);color:#fff}
+.btn.sm{padding:5px 10px;font-size:12px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:18px}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px;box-shadow:var(--sh);border-top:3px solid var(--line)}
+.kpi b{display:block;font-size:26px;letter-spacing:-1px;line-height:1.2}
+.kpi span{color:var(--slate);font-size:11.5px;text-transform:uppercase;letter-spacing:.8px}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--sh);padding:16px;margin-bottom:16px}
+.panel h3{margin:0 0 12px;font-size:13px;text-transform:uppercase;letter-spacing:1px;color:var(--slate)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:900px){.grid2{grid-template-columns:1fr}}
+.board{display:flex;gap:12px;overflow-x:auto;padding-bottom:10px;align-items:flex-start}
+.col{flex:0 0 268px;background:#EDF1F6;border-radius:var(--r);padding:8px;min-height:120px}
+.col.over{outline:2px dashed #9FB0C7}
+.col h4{margin:4px 6px 10px;font-size:12px;letter-spacing:1px;text-transform:uppercase;color:var(--ink-2);display:flex;justify-content:space-between}
+.col h4 i{font-style:normal;background:#fff;border-radius:20px;padding:1px 8px;color:var(--slate);font-size:11px}
+.card{background:#fff;border:1px solid var(--line);border-left:4px solid var(--novo);border-radius:8px;padding:10px;margin-bottom:8px;cursor:grab;box-shadow:0 1px 2px rgba(15,27,45,.05)}
+.card:hover{border-color:#C3CDDC}
+.card .id{font-size:11px;color:var(--slate);letter-spacing:.5px}
+.card .tt{font-weight:600;margin:3px 0 6px;font-size:13.5px;line-height:1.35}
+.meta{display:flex;flex-wrap:wrap;gap:5px;font-size:11px;color:var(--slate)}
+.tag{border-radius:5px;padding:2px 6px;background:#F0F3F8;border:1px solid var(--line)}
+.tag.p{color:#fff;border:0}
+.late{background:#FDEDEC;color:var(--atraso);border:1px solid #F6D5D2;font-weight:600}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;color:var(--slate);font-size:11px;text-transform:uppercase;letter-spacing:.8px;padding:8px 10px;border-bottom:1px solid var(--line);position:sticky;top:0;background:#fff}
+td{padding:9px 10px;border-bottom:1px solid #F0F3F8}
+tr:hover td{background:#FAFCFE}
+.tl{position:relative;padding-left:96px}
+.tl .ev{position:relative;border-left:2px solid var(--line);padding:0 0 14px 18px}
+.tl .ev:before{content:"";position:absolute;left:-6px;top:3px;width:10px;height:10px;border-radius:50%;background:var(--exec);border:2px solid #fff;box-shadow:0 0 0 1px var(--line)}
+.tl .ev.pz:before{background:var(--pausa)}
+.tl .hr{position:absolute;left:-96px;top:0;width:82px;text-align:right;color:var(--slate);font-size:12.5px}
+.bar{height:10px;border-radius:6px;background:#EDF1F6;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--exec)}
+.mask{position:fixed;inset:0;background:rgba(15,27,45,.45);display:flex;justify-content:center;align-items:flex-start;padding:34px 16px;z-index:100;overflow:auto}
+.modal{background:#fff;border-radius:12px;width:100%;max-width:780px;box-shadow:0 24px 60px rgba(15,27,45,.28)}
+.modal.sm{max-width:460px}
+.mh{padding:16px 20px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}
+.mh h3{margin:0;font-size:16px}
+.mb{padding:20px;max-height:70vh;overflow:auto}
+.mf{padding:14px 20px;border-top:1px solid var(--line);display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
+label{display:block;font-size:12px;color:var(--slate);margin:0 0 4px;font-weight:600}
+.f{margin-bottom:12px}
+input,select,textarea{width:100%;border:1px solid var(--line);border-radius:8px;padding:8px 10px;background:#fff}
+textarea{min-height:76px;resize:vertical}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:640px){.row{grid-template-columns:1fr}aside{position:fixed;left:-236px}main{width:100%}}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.chip{border:1px solid var(--line);background:#fff;border-radius:20px;padding:5px 12px;font-size:12.5px}
+.chip.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.dl{display:grid;grid-template-columns:150px 1fr;gap:6px 12px;font-size:13px}
+.dl b{color:var(--slate);font-weight:600;font-size:12px}
+.empty{text-align:center;color:var(--slate);padding:34px;border:1px dashed var(--line);border-radius:var(--r)}
+.toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:11px 18px;border-radius:8px;z-index:200;box-shadow:var(--sh);font-size:13px}
+:focus-visible{outline:2px solid #3B82C4;outline-offset:2px}
+</style>
+
+<div id="app">
+  <aside>
+    <div class="brand"><small>Dados · Relacionamento</small><h1>Central de Demandas</h1></div>
+    <nav id="nav"></nav>
+    <div class="who">
+      <div style="font-size:11px;color:#65799A;margin-bottom:4px;letter-spacing:.8px;text-transform:uppercase">Usuário</div>
+      <div style="background:#1B2A42;border:1px solid #2C3E5C;border-radius:8px;padding:8px 10px;font-size:12.5px;color:#DCE5F1">
+        Analista de Dados
+      </div>
+    </div>
+  </aside>
+  <main>
+    <div class="topbar">
+      <input class="search" id="q" placeholder="Buscar por ID, título, solicitante, categoria…">
+      <div id="runbar"></div>
+      <button class="btn pri" onclick="novaDemanda()">+ Nova demanda</button>
+    </div>
+    <div class="wrap" id="view"></div>
+  </main>
+</div>
+<div id="modals"></div>
+<div id="toasts"></div>
+
+<script>
+const STATUS=[
+  {k:"NOVA",l:"Novas",c:"var(--novo)"},
+  {k:"PRIORIZADA",l:"Priorizadas",c:"var(--media)"},
+  {k:"EXECUCAO",l:"Em execução",c:"var(--exec)"},
+  {k:"PAUSADA",l:"Pausadas",c:"var(--pausa)"},
+  {k:"VALIDACAO",l:"Em validação",c:"var(--valid)"},
+  {k:"CONCLUIDA",l:"Concluídas",c:"var(--ok)"}];
+const PRIOS={CRITICA:{l:"Crítica",c:"var(--crit)",w:4},ALTA:{l:"Alta",c:"var(--alta)",w:3},MEDIA:{l:"Média",c:"var(--media)",w:2},BAIXA:{l:"Baixa",c:"var(--baixa)",w:1}};
+const CATS=["Power BI","Dados","Extração","Análise","Correção","Automação","Relatório","Indicador","Sustentação","Desenvolvimento","Outro"];
+const MOTIVOS=["Outra demanda prioritária","Aguardando informação","Aguardando retorno do solicitante","Aguardando acesso","Aguardando sistema","Interrupção operacional","Outro"];
+const USERS=[{n:"Você (Analista de Dados)",p:"GESTOR"}];
+const RESP="Você (Analista de Dados)";
+
+let DB={seq:0,demandas:[]}, VIEW="painel", ME=0, Q="", F={};
+const KEY="demandas:v1";
+async function load(){try{const r=await window.storage.get(KEY);if(r&&r.value){DB=JSON.parse(r.value);return;}}catch(e){}await save();}
+async function save(){try{await window.storage.set(KEY,JSON.stringify(DB));}catch(e){console.warn("storage",e);}}
+const me=()=>USERS[ME], isGestor=()=>me().p==="GESTOR";
+
+const pad=(n,c=2)=>String(n).padStart(c,"0");
+const now=()=>new Date().toISOString();
+const D=s=>new Date(s);
+const fmt=s=>s?D(s).toLocaleString("pt-BR",{day:"2-digit",month:"2-digit",year:"2-digit",hour:"2-digit",minute:"2-digit"}):"—";
+const fmtD=s=>s?D(s).toLocaleDateString("pt-BR"):"—";
+const fmtH=s=>s?D(s).toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"}):"—";
+const dia=s=>D(s).toISOString().slice(0,10);
+const hoje=()=>new Date().toISOString().slice(0,10);
+function dur(ms){if(!ms||ms<0)ms=0;const m=Math.floor(ms/60000);return pad(Math.floor(m/60))+"h"+pad(m%60);}
+function durS(ms){const s=Math.floor(ms/1000);return pad(Math.floor(s/3600))+":"+pad(Math.floor(s%3600/60))+":"+pad(s%60);}
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+function toast(m){const t=document.createElement("div");t.className="toast";t.textContent=m;toasts.appendChild(t);setTimeout(()=>t.remove(),2600);}
+
+function ativo(d,ref=Date.now()){return(d.sessoes||[]).reduce((a,s)=>a+((s.fim?D(s.fim):ref)-D(s.inicio)),0);}
+function decorrido(d,ref=Date.now()){const s=d.sessoes?.[0];if(!s)return 0;const fim=d.concluidoEm?D(d.concluidoEm):ref;return fim-D(s.inicio);}
+function pausado(d,ref=Date.now()){return Math.max(0,decorrido(d,ref)-ativo(d,ref));}
+const emExec=()=>DB.demandas.find(d=>d.status==="EXECUCAO");
+const atrasada=d=>d.prazo&&d.status!=="CONCLUIDA"&&D(d.prazo+"T23:59:59")<new Date();
+const noPrazo=d=>d.concluidoEm&&d.prazo?D(d.concluidoEm)<=D(d.prazo+"T23:59:59"):null;
+function log(d,tipo,txt,extra={}){d.historico.push({ts:now(),tipo,txt,usuario:me().n,...extra});}
+
+function nextId(){DB.seq++;return "DEM-"+pad(DB.seq,6);}
+function criar(o){
+  const d={id:nextId(),...o,criadoEm:now(),status:"NOVA",responsavel:o.responsavel||RESP,sessoes:[],historico:[],comentarios:[]};
+  log(d,"CRIACAO","Demanda criada por "+me().n);
+  DB.demandas.unshift(d);save();render();toast("Demanda "+d.id+" registrada");
+  return d;
+}
+function mudarStatus(d,st,txt){const de=d.status;if(de===st)return;d.status=st;log(d,"STATUS",txt||("Status: "+lbl(de)+" → "+lbl(st)),{de,para:st});}
+const lbl=k=>STATUS.find(s=>s.k===k)?.l||k;
+
+function iniciar(d,force){
+  const cur=emExec();
+  if(cur&&cur.id!==d.id){if(!force)return confirmTroca(cur,d);pausar(cur,"Outra demanda prioritária","Pausada automaticamente para iniciar "+d.id,true);}
+  if(d.status==="EXECUCAO")return;
+  d.sessoes.push({inicio:now(),fim:null});
+  const ret=d.sessoes.length>1;
+  mudarStatus(d,"EXECUCAO",ret?"Execução retomada — sessão "+d.sessoes.length:"Execução iniciada — sessão 1");
+  save();render();toast((ret?"Retomada: ":"Iniciada: ")+d.id);
+}
+function pausar(d,motivo,obs,silent){
+  const s=d.sessoes.filter(x=>!x.fim).pop();if(s){s.fim=now();s.motivo=motivo;s.obs=obs||"";}
+  mudarStatus(d,"PAUSADA","Demanda pausada — motivo: "+motivo+(obs?" ("+obs+")":""));
+  if(!silent){save();render();toast("Pausada: "+d.id);}
+}
+function fecharSessao(d){const s=d.sessoes.filter(x=>!x.fim).pop();if(s)s.fim=now();}
+function validar(d){fecharSessao(d);mudarStatus(d,"VALIDACAO","Enviada para validação");save();render();}
+function concluir(d,res,obs,link){
+  fecharSessao(d);d.concluidoEm=now();d.resultado=res;d.obsFinal=obs;d.linkResultado=link;
+  mudarStatus(d,"CONCLUIDA","Demanda concluída — tempo ativo "+dur(ativo(d))+", pausado "+dur(pausado(d)));
+  save();render();toast("Concluída: "+d.id+" · ativo "+dur(ativo(d)));
+}
+
+const NAVI=[["painel","Painel"],["kanban","Kanban"],["agenda","Minha agenda"],["lista","Lista completa"],["calendario","Calendário"],["gerencial","Visão gerencial"],["exec","Dashboard executivo"],["log","Log de exclusoes"]];
+function render(){
+  nav.innerHTML='<div class="grp">Operação</div>'+NAVI.slice(0,4).map(([k,l])=>`<button class="${VIEW==k?'on':''}" onclick="go('${k}')">${l}</button>`).join("")
+    +'<div class="grp">Acompanhamento</div>'+NAVI.slice(4).map(([k,l])=>`<button class="${VIEW==k?'on':''}" onclick="go('${k}')">${l}</button>`).join("");
+  nav.innerHTML+=`<div class="grp" style="margin-top:4px">Manutencao</div>
+    <button style="display:flex;gap:10px;align-items:center;width:100%;background:none;border:0;color:#C9D4E4;padding:9px 12px;border-radius:8px;text-align:left;font-size:13.5px;cursor:pointer" onmouseover="this.style.background='rgba(212,84,76,.25)'" onmouseout="this.style.background='none'" onclick="askZerarTudo()">
+      <span style="color:#e07070">⊘</span> Zerar tudo</button>`;
+  const run=emExec();
+  runbar.innerHTML=run
+    ?`<div class="runbar"><span class="dot"></span><span>${run.id}</span><span class="t num" id="tick">${durS(ativo(run))}</span><button class="btn sm warn" onclick="askPausa('${run.id}')">Pausar</button></div>`
+    :`<div class="runbar idle">Nada em execução</div>`;
+  view.innerHTML=({painel:vPainel,kanban:vKanban,agenda:vAgenda,lista:vLista,calendario:vCal,gerencial:vGer,exec:vExec,log:vLog})[VIEW]();
+  if(VIEW==="kanban")dnd();
+}
+function go(v){VIEW=v;render();window.scrollTo(0,0);}
+setInterval(()=>{const d=emExec(),t=document.getElementById("tick");if(d&&t)t.textContent=durS(ativo(d));},1000);
+
+function base(){
+  let l=DB.demandas;
+  if(!isGestor())l=l.filter(d=>d.solicitante===me().n);
+  if(Q){const q=Q.toLowerCase();l=l.filter(d=>[d.id,d.titulo,d.descricao,d.solicitante,d.responsavel,d.categoria,lbl(d.status)].join(" ").toLowerCase().includes(q));}
+  if(F.prio)l=l.filter(d=>d.prioridade===F.prio);
+  if(F.cat)l=l.filter(d=>d.categoria===F.cat);
+  if(F.sol)l=l.filter(d=>d.solicitante===F.sol);
+  if(F.atraso)l=l.filter(atrasada);
+  return l;
+}
+q.oninput=e=>{Q=e.target.value;render();};
+function chip(k,v,l){return `<button class="chip ${F[k]===v?'on':''}" onclick="F['${k}']=(F['${k}']==='${v}'?null:'${v}');render()">${l}</button>`;}
+function filtros(){
+  const sols=[...new Set(DB.demandas.map(d=>d.solicitante))];
+  return `<div class="chips">${Object.keys(PRIOS).map(p=>chip("prio",p,PRIOS[p].l)).join("")}
+  ${CATS.slice(0,6).map(c=>chip("cat",c,c)).join("")}
+  ${sols.map(s=>chip("sol",s,s.split(" ")[0])).join("")}
+  <button class="chip ${F.atraso?'on':''}" onclick="F.atraso=!F.atraso;render()">⚠ Atrasadas</button>
+  <button class="chip" onclick="F={};Q='';q.value='';render()">Limpar</button></div>`;
+}
+
+function vPainel(){
+  const l=base(),c=k=>l.filter(d=>d.status===k).length,run=emExec();
+  const total=l.reduce((a,d)=>a+ativo(d),0);
+  const hj=l.filter(d=>dia(d.criadoEm)===hoje()).length,fim=l.filter(d=>d.concluidoEm&&dia(d.concluidoEm)===hoje()).length;
+  const kpi=(v,t,c2)=>`<div class="kpi" style="border-top-color:${c2}"><b class="num">${v}</b><span>${t}</span></div>`;
+  const prox=l.filter(d=>d.status!=="CONCLUIDA").sort((a,b)=>(PRIOS[b.prioridade].w-PRIOS[a.prioridade].w)||(D(a.prazo||"2999")-D(b.prazo||"2999"))).slice(0,6);
+  return `<h2 class="page">Painel</h2><p class="sub">Onde a agenda de hoje começa. ${fmtD(now())}</p>
+  <div class="kpis">
+    ${kpi(l.filter(d=>d.status!=="CONCLUIDA").length,"Abertas","var(--ink)")}
+    ${kpi(c("EXECUCAO"),"Em execução","var(--exec)")}
+    ${kpi(c("PAUSADA"),"Pausadas","var(--pausa)")}
+    ${kpi(c("VALIDACAO"),"Em validação","var(--valid)")}
+    ${kpi(l.filter(atrasada).length,"Atrasadas","var(--atraso)")}
+    ${kpi(c("CONCLUIDA"),"Concluídas","var(--ok)")}
+    ${kpi(l.length,"Total","var(--line)")}
+    ${kpi(dur(total),"Tempo ativo acumulado","var(--ink-2)")}
+  </div>
+  <div class="grid2">
+    <div class="panel"><h3>Em execução agora</h3>
+      ${run?`<div><b>${run.id}</b> — ${esc(run.titulo)}
+      <div class="meta" style="margin:8px 0">${tags(run)}</div>
+      <div style="font-size:30px;font-weight:700;letter-spacing:-1px" class="num" id="tick2">${durS(ativo(run))}</div>
+      <div style="color:var(--slate);font-size:12px">Sessão ${run.sessoes.length} · iniciada ${fmtH(run.sessoes.at(-1).inicio)}</div>
+      <div style="margin-top:12px;display:flex;gap:8px">
+        <button class="btn warn sm" onclick="askPausa('${run.id}')">Pausar</button>
+        <button class="btn sm" onclick="abrir('${run.id}')">Abrir</button>
+      </div></div>`:`<div class="empty">Nenhuma demanda rodando. Abra a fila e clique em <b>Iniciar</b> para começar a contar o tempo.</div>`}
+    </div>
+    <div class="panel"><h3>Fila por prioridade</h3>
+      ${prox.length?prox.map(d=>`<div style="display:flex;gap:10px;align-items:center;padding:7px 0;border-bottom:1px solid #F0F3F8;cursor:pointer" onclick="abrir('${d.id}')">
+        <span class="tag p" style="background:${PRIOS[d.prioridade].c}">${PRIOS[d.prioridade].l}</span>
+        <span style="flex:1"><b class="num" style="font-size:11px;color:var(--slate)">${d.id}</b> ${esc(d.titulo)}</span>
+        <span class="${atrasada(d)?'tag late':'tag'}">${d.prazo?fmtD(d.prazo):"sem prazo"}</span>
+      </div>`).join(""):`<div class="empty">Fila vazia.</div>`}
+    </div>
+  </div>
+  <div class="grid2">
+    <div class="panel"><h3>Movimento de hoje</h3>
+      <div style="display:flex;gap:30px">
+        <div><b class="num" style="font-size:24px">${hj}</b><div style="color:var(--slate);font-size:12px">recebidas hoje</div></div>
+        <div><b class="num" style="font-size:24px">${fim}</b><div style="color:var(--slate);font-size:12px">concluídas hoje</div></div>
+        <div><b class="num" style="font-size:24px">${dur(l.reduce((a,d)=>a+d.sessoes.filter(s=>dia(s.inicio)===hoje()).reduce((x,s2)=>x+((s2.fim?D(s2.fim):Date.now())-D(s2.inicio)),0),0))}</b><div style="color:var(--slate);font-size:12px">trabalhado hoje</div></div>
+      </div>
+    </div>
+    <div class="panel"><h3>Perto do prazo (3 dias)</h3>
+      ${(()=>{const n=l.filter(d=>d.status!=="CONCLUIDA"&&d.prazo&&(D(d.prazo)-new Date())/864e5<3);
+        return n.length?n.map(d=>`<div style="padding:6px 0;cursor:pointer" onclick="abrir('${d.id}')"><b class="num" style="font-size:11px;color:var(--slate)">${d.id}</b> ${esc(d.titulo)} <span class="${atrasada(d)?'tag late':'tag'}">${fmtD(d.prazo)}</span></div>`).join(""):`<div class="empty">Nada apertado por aqui.</div>`})()}
+    </div>
+  </div>`;
+}
+function tags(d){return `<span class="tag p" style="background:${PRIOS[d.prioridade].c}">${PRIOS[d.prioridade].l}</span><span class="tag">${esc(d.categoria)}</span><span class="tag">${esc(d.solicitante)}</span>${atrasada(d)?'<span class="tag late">Atrasada</span>':''}`;}
+
+function vKanban(){
+  const l=base();
+  return `<h2 class="page">Kanban</h2><p class="sub">Arraste um card para mudar o status. Toda movimentação vira histórico.</p>${filtros()}
+  <div class="board">${STATUS.map(s=>{const ds=l.filter(d=>d.status===s.k);
+    return `<div class="col" data-st="${s.k}"><h4><span style="color:${s.c}">${s.l}</span><i class="num">${ds.length}</i></h4>
+    ${ds.map(cardHTML).join("")||'<div style="color:#96A5BA;font-size:12px;padding:8px">—</div>'}</div>`;}).join("")}</div>`;
+}
+function cardHTML(d){
+  const cor=d.status==="EXECUCAO"?"var(--exec)":d.status==="PAUSADA"?"var(--pausa)":atrasada(d)?"var(--atraso)":PRIOS[d.prioridade].c;
+  return `<div class="card" draggable="true" data-id="${d.id}" onclick="abrir('${d.id}')" style="border-left-color:${cor}">
+    <div class="id num">${d.id} ${d.status==="EXECUCAO"?'<span style="color:var(--exec)">● rodando</span>':''}</div>
+    <div class="tt">${esc(d.titulo)}</div>
+    <div class="meta">${tags(d)}<span class="tag num">⏱ ${dur(ativo(d))}</span><span class="tag">${d.prazo?fmtD(d.prazo):"sem prazo"}</span></div></div>`;
+}
+function dnd(){
+  document.querySelectorAll(".card").forEach(c=>{c.ondragstart=e=>{e.dataTransfer.setData("id",c.dataset.id)};});
+  document.querySelectorAll(".col").forEach(col=>{
+    col.ondragover=e=>{e.preventDefault();col.classList.add("over");};
+    col.ondragleave=()=>col.classList.remove("over");
+    col.ondrop=e=>{e.preventDefault();col.classList.remove("over");
+      const d=DB.demandas.find(x=>x.id===e.dataTransfer.getData("id")),st=col.dataset.st;
+      if(!d||d.status===st)return;
+      if(!isGestor())return toast("Perfil solicitante não altera status.");
+      if(st==="EXECUCAO")return iniciar(d);
+      if(st==="PAUSADA")return askPausa(d.id);
+      if(st==="CONCLUIDA")return askConcluir(d.id);
+      fecharSessao(d);mudarStatus(d,st);save();render();};
+  });
+}
+
+function vAgenda(){
+  const dias=[...new Set(DB.demandas.flatMap(d=>d.sessoes.map(s=>dia(s.inicio))))].sort().reverse();
+  const dsel=F.dia||dias[0]||hoje();
+  const ev=[];
+  DB.demandas.forEach(d=>d.sessoes.forEach((s,i)=>{if(dia(s.inicio)!==dsel)return;
+    ev.push({t:s.inicio,tipo:i?"retomada":"inicio",d,s,i});
+    if(s.fim)ev.push({t:s.fim,tipo:d.concluidoEm&&d.concluidoEm===s.fim?"fim":"pausa",d,s,i});}));
+  ev.sort((a,b)=>D(a.t)-D(b.t));
+  const totalDia=DB.demandas.reduce((a,d)=>a+d.sessoes.filter(s=>dia(s.inicio)===dsel).reduce((x,s2)=>x+((s2.fim?D(s2.fim):Date.now())-D(s2.inicio)),0),0);
+  return `<h2 class="page">Minha agenda</h2><p class="sub">A linha do tempo real do dia — o que foi feito, quando parou e por quê.</p>
+  <div class="chips">${dias.slice(0,10).map(x=>`<button class="chip ${x===dsel?'on':''}" onclick="F.dia='${x}';render()">${fmtD(x)}</button>`).join("")||'<span class="chip">Sem execuções registradas</span>'}</div>
+  <div class="panel"><h3>${fmtD(dsel)} · tempo ativo do dia: <span class="num">${dur(totalDia)}</span></h3>
+  ${ev.length?`<div class="tl">${ev.map((e,i)=>{
+    const prev=ev[i-1],gap=prev&&e.tipo!=="pausa"&&e.tipo!=="fim"?D(e.t)-D(prev.t):0;
+    const lacuna=gap>60000&&(prev.tipo==="pausa"||prev.tipo==="fim")?`<div class="ev pz"><div class="hr num">${fmtH(prev.t)}</div><span style="color:var(--slate)">Intervalo sem execução — ${dur(gap)}${prev.s.motivo?" · "+esc(prev.s.motivo):""}</span></div>`:"";
+    const txt={inicio:"Início da execução",retomada:"Retomada (sessão "+(e.i+1)+")",pausa:"Pausa — "+esc(e.s.motivo||"—"),fim:"Conclusão"}[e.tipo];
+    return lacuna+`<div class="ev ${e.tipo==="pausa"?"pz":""}"><div class="hr num">${fmtH(e.t)}</div>
+      <b class="num" style="font-size:11px;color:var(--slate)">${e.d.id}</b> <a href="#" onclick="abrir('${e.d.id}');return false" style="color:inherit"><b>${esc(e.d.titulo)}</b></a>
+      <div style="color:var(--slate);font-size:12.5px">${txt}${e.s.obs?" · "+esc(e.s.obs):""}</div></div>`;}).join("")}</div>`
+    :`<div class="empty">Nenhuma execução neste dia.</div>`}</div>`;
+}
+
+function vLista(){
+  const l=base();
+  return `<h2 class="page">Lista completa</h2><p class="sub">${l.length} demanda(s) · exporte para Excel/CSV a qualquer momento.</p>${filtros()}
+  <div style="margin-bottom:12px;display:flex;gap:8px">
+    <button class="btn sm" onclick="exportar('demandas')">Exportar demandas (CSV)</button>
+    <button class="btn sm" onclick="exportar('historico')">Exportar histórico (CSV)</button>
+    <button class="btn sm" onclick="window.print()">Imprimir / PDF</button><button class="btn sm" style="color:var(--atraso);border-color:#F6D5D2;margin-left:auto" onclick="askZerarTudo()">⊘ Zerar tudo</button>
+  </div>
+  <div class="panel" style="overflow:auto"><table><thead><tr><th>ID</th><th>Título</th><th>Solicitante</th><th>Prio</th><th>Categoria</th><th>Status</th><th>Prazo</th><th>Ativo</th><th>Pausado</th><th></th></tr></thead><tbody>
+  ${l.map(d=>`<tr onclick="abrir('${d.id}')" style="cursor:pointer">
+    <td class="num">${d.id}</td><td>${esc(d.titulo)}</td><td>${esc(d.solicitante)}</td>
+    <td><span class="tag p" style="background:${PRIOS[d.prioridade].c}">${PRIOS[d.prioridade].l}</span></td>
+    <td>${esc(d.categoria)}</td>
+    <td><span class="tag" style="border-color:${STATUS.find(s=>s.k===d.status).c};color:${STATUS.find(s=>s.k===d.status).c}">${lbl(d.status)}</span></td>
+    <td>${d.prazo?fmtD(d.prazo):"—"} ${atrasada(d)?'<span class="tag late">atraso</span>':''}</td>
+    <td class="num">${dur(ativo(d))}</td><td class="num">${dur(pausado(d))}</td>
+    <td><button class="btn sm" onclick="event.stopPropagation();abrir('${d.id}')">Abrir</button></td>
+  </tr>`).join("")||'<tr><td colspan="10"><div class="empty">Nada encontrado com esses filtros.</div></td></tr>'}
+  </tbody></table></div>`;
+}
+
+function vCal(){
+  const mRef=F.mes?new Date(F.mes+"-01T12:00"):new Date();
+  const y=mRef.getFullYear(),m=mRef.getMonth(),first=new Date(y,m,1),start=new Date(y,m,1-first.getDay());
+  const cells=[...Array(42)].map((_,i)=>{const dt=new Date(start.getTime()+i*864e5),k=dt.toISOString().slice(0,10);
+    const praz=DB.demandas.filter(d=>d.prazo===k),conc=DB.demandas.filter(d=>d.concluidoEm&&dia(d.concluidoEm)===k),exe=DB.demandas.filter(d=>d.sessoes.some(s=>dia(s.inicio)===k));
+    return `<div style="min-height:92px;border:1px solid var(--line);border-radius:8px;padding:6px;background:${dt.getMonth()==m?'#fff':'#FAFBFD'}">
+      <div class="num" style="font-size:11px;color:${k===hoje()?'var(--exec)':'var(--slate)'};font-weight:${k===hoje()?700:400}">${dt.getDate()}</div>
+      ${praz.map(d=>`<div class="tag" style="display:block;margin-top:3px;font-size:10.5px;border-left:3px solid ${atrasada(d)?'var(--atraso)':'var(--media)'};cursor:pointer" onclick="abrir('${d.id}')">⌛ ${d.id}</div>`).join("")}
+      ${conc.map(d=>`<div class="tag" style="display:block;margin-top:3px;font-size:10.5px;border-left:3px solid var(--ok);cursor:pointer" onclick="abrir('${d.id}')">✓ ${d.id}</div>`).join("")}
+      ${exe.length&&!praz.length&&!conc.length?`<div class="tag" style="display:block;margin-top:3px;font-size:10.5px;border-left:3px solid var(--exec)">▶ ${exe.length} exec.</div>`:""}</div>`;}).join("");
+  return `<h2 class="page">Calendário</h2><p class="sub">Prazos (⌛), conclusões (✓) e dias com execução (▶).</p>
+  <div class="chips">
+    <button class="chip" onclick="F.mes='${new Date(y,m-1,1).toISOString().slice(0,7)}';render()">← anterior</button>
+    <span class="chip on">${mRef.toLocaleDateString("pt-BR",{month:"long",year:"numeric"})}</span>
+    <button class="chip" onclick="F.mes='${new Date(y,m+1,1).toISOString().slice(0,7)}';render()">próximo →</button>
+  </div>
+  <div class="panel">
+    <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-bottom:6px;color:var(--slate);font-size:11px;text-transform:uppercase;letter-spacing:1px">${["dom","seg","ter","qua","qui","sex","sáb"].map(x=>`<div>${x}</div>`).join("")}</div>
+    <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px">${cells}</div>
+  </div>`;
+}
+
+function grupo(l,f){const m={};l.forEach(d=>{const k=f(d);m[k]=m[k]||{n:0,t:0};m[k].n++;m[k].t+=ativo(d);});return m;}
+function barras(m,cor){const max=Math.max(1,...Object.values(m).map(v=>v.n));
+  return Object.entries(m).sort((a,b)=>b[1].n-a[1].n).map(([k,v])=>`<div style="margin-bottom:9px"><div style="display:flex;justify-content:space-between;font-size:12.5px"><span>${esc(k)}</span><span class="num" style="color:var(--slate)">${v.n} · ${dur(v.t)}</span></div><div class="bar"><i style="width:${v.n/max*100}%;background:${cor||'var(--ink-2)'}"></i></div></div>`).join("");}
+
+function vGer(){
+  const l=base(),fin=l.filter(d=>d.status==="CONCLUIDA");
+  const tAtivo=l.reduce((a,d)=>a+ativo(d),0),tPausa=l.reduce((a,d)=>a+pausado(d),0);
+  const lead=fin.length?fin.reduce((a,d)=>a+(D(d.concluidoEm)-D(d.criadoEm)),0)/fin.length:0;
+  const medio=fin.length?fin.reduce((a,d)=>a+ativo(d),0)/fin.length:0;
+  const dentro=fin.filter(d=>noPrazo(d)===true).length;
+  const kpi=(v,t)=>`<div class="kpi"><b class="num">${v}</b><span>${t}</span></div>`;
+  return `<h2 class="page">Visão gerencial</h2><p class="sub">Entradas, saídas, backlog e onde o tempo está indo.</p>${filtros()}
+  <div class="kpis">${kpi(l.length,"Recebidas")}${kpi(fin.length,"Concluídas")}${kpi(l.filter(d=>["EXECUCAO","PRIORIZADA"].includes(d.status)).length,"Em andamento")}
+  ${kpi(l.filter(d=>d.status==="PAUSADA").length,"Pausadas")}${kpi(l.filter(atrasada).length,"Atrasadas")}${kpi(l.filter(d=>d.status!=="CONCLUIDA").length,"Backlog")}
+  ${kpi(dur(tAtivo),"Tempo ativo")}${kpi(dur(tPausa),"Tempo pausado")}${kpi(dur(medio),"Médio/demanda")}${kpi(dur(lead),"Lead time médio")}
+  ${kpi(l.length?Math.round(fin.length/l.length*100)+"%":"0%","Taxa conclusão")}${kpi(fin.length?Math.round(dentro/fin.length*100)+"%":"—","Entregues no prazo")}</div>
+  <div class="grid2">
+    <div class="panel"><h3>Por categoria</h3>${barras(grupo(l,d=>d.categoria),"var(--exec)")||'<div class="empty">Sem dados</div>'}</div>
+    <div class="panel"><h3>Por solicitante</h3>${barras(grupo(l,d=>d.solicitante),"var(--valid)")||'<div class="empty">Sem dados</div>'}</div>
+    <div class="panel"><h3>Por prioridade</h3>${barras(grupo(l,d=>PRIOS[d.prioridade].l),"var(--alta)")}</div>
+    <div class="panel"><h3>Por status</h3>${barras(grupo(l,d=>lbl(d.status)),"var(--ink-2)")}</div>
+    <div class="panel"><h3>Entradas × saídas (7 dias)</h3>
+      ${[...Array(7)].map((_,i)=>{const k=new Date(Date.now()-(6-i)*864e5).toISOString().slice(0,10);
+        const e=l.filter(d=>dia(d.criadoEm)===k).length,s=l.filter(d=>d.concluidoEm&&dia(d.concluidoEm)===k).length;
+        return `<div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;font-size:12.5px"><span class="num" style="width:52px;color:var(--slate)">${k.slice(8)}/${k.slice(5,7)}</span>
+        <div class="bar" style="flex:1"><i style="width:${Math.min(100,e*20)}%;background:var(--media)"></i></div><span class="num" style="width:18px">${e}</span>
+        <div class="bar" style="flex:1"><i style="width:${Math.min(100,s*20)}%;background:var(--ok)"></i></div><span class="num" style="width:18px">${s}</span></div>`;}).join("")}
+      <div style="color:var(--slate);font-size:11.5px">azul = entradas · verde = saídas</div>
+    </div>
+    <div class="panel"><h3>Motivos de pausa</h3>${(()=>{const m={};l.forEach(d=>d.sessoes.forEach(s=>{if(s.motivo){m[s.motivo]=m[s.motivo]||{n:0,t:0};m[s.motivo].n++;}}));return Object.keys(m).length?barras(m,"var(--pausa)").replace(/ · 00h00/g,""):'<div class="empty">Nenhuma pausa registrada</div>';})()}</div>
+  </div>`;
+}
+
+function vExec(){
+  const l=DB.demandas,run=emExec();
+  const bloq=l.filter(d=>d.status==="PAUSADA"&&d.sessoes.at(-1)?.motivo&&d.sessoes.at(-1).motivo!=="Outra demanda prioritária");
+  const box=(t,v,c)=>`<div class="kpi" style="border-top-color:${c}"><b class="num">${v}</b><span>${t}</span></div>`;
+  return `<h2 class="page">Como está a agenda de trabalho?</h2><p class="sub">Resposta em uma tela — sem precisar perguntar.</p>
+  <div class="kpis">
+    ${box("Entrou (7 dias)",l.filter(d=>(new Date()-D(d.criadoEm))<7*864e5).length,"var(--media)")}
+    ${box("Sendo feito agora",run?1:0,"var(--exec)")}
+    ${box("Concluído (7 dias)",l.filter(d=>d.concluidoEm&&(new Date()-D(d.concluidoEm))<7*864e5).length,"var(--ok)")}
+    ${box("Parado",l.filter(d=>d.status==="PAUSADA").length,"var(--pausa)")}
+    ${box("Atrasado",l.filter(atrasada).length,"var(--atraso)")}
+    ${box("Tempo ativo (7 dias)",dur(l.reduce((a,d)=>a+d.sessoes.filter(s=>(new Date()-D(s.inicio))<7*864e5).reduce((x,s2)=>x+((s2.fim?D(s2.fim):Date.now())-D(s2.inicio)),0),0)),"var(--ink)")}
+  </div>
+  <div class="grid2">
+    <div class="panel"><h3>Agora</h3>${run?`<b class="num">${run.id}</b> — ${esc(run.titulo)}<div style="font-size:26px;font-weight:700" class="num">${durS(ativo(run))}</div><div style="color:var(--slate);font-size:12.5px">Solicitante: ${esc(run.solicitante)} · ${PRIOS[run.prioridade].l}</div>`:'<div class="empty">Sem execução ativa neste momento.</div>'}</div>
+    <div class="panel"><h3>Prioridades da fila</h3>${l.filter(d=>d.status!=="CONCLUIDA").sort((a,b)=>PRIOS[b.prioridade].w-PRIOS[a.prioridade].w).slice(0,5).map(d=>`<div style="padding:5px 0;font-size:13px"><span class="tag p" style="background:${PRIOS[d.prioridade].c}">${PRIOS[d.prioridade].l}</span> <b class="num" style="font-size:11px;color:var(--slate)">${d.id}</b> ${esc(d.titulo)}</div>`).join("")||'<div class="empty">Fila limpa.</div>'}</div>
+    <div class="panel"><h3>Bloqueadas (dependem de terceiros)</h3>${bloq.length?bloq.map(d=>`<div style="padding:5px 0;font-size:13px"><b class="num" style="font-size:11px;color:var(--slate)">${d.id}</b> ${esc(d.titulo)} — <span style="color:var(--pausa)">${esc(d.sessoes.at(-1).motivo)}</span></div>`).join(""):'<div class="empty">Nada bloqueado.</div>'}</div>
+    <div class="panel"><h3>Atrasadas</h3>${l.filter(atrasada).map(d=>`<div style="padding:5px 0;font-size:13px"><b class="num" style="font-size:11px;color:var(--slate)">${d.id}</b> ${esc(d.titulo)} <span class="tag late">venceu ${fmtD(d.prazo)}</span></div>`).join("")||'<div class="empty">Nenhuma demanda atrasada.</div>'}</div>
+  </div>`;
+}
+
+function closeM(){modals.innerHTML="";}
+function M(html,cls=""){modals.innerHTML=`<div class="mask" onclick="if(event.target===this)closeM()"><div class="modal ${cls}">${html}</div></div>`;}
+
+function novaDemanda(){
+  M(`<div class="mh"><h3>Nova demanda</h3><button class="btn sm" onclick="closeM()">✕</button></div><div class="mb">
+    <div class="f"><label>Título*</label><input id="f_t" placeholder="Ex.: Atualizar indicador de churn no painel de Relacionamento"></div>
+    <div class="f"><label>Descrição detalhada</label><textarea id="f_d" placeholder="O que precisa ser feito, fonte dos dados, formato de entrega…"></textarea></div>
+    <div class="row">
+      <div class="f"><label>Solicitante*</label><input id="f_s" value="${esc(isGestor()?'':me().n)}" list="ul"><datalist id="ul"></datalist></div>
+      <div class="f"><label>Área</label><input id="f_a" placeholder="Relacionamento / Comercial…"></div>
+    </div>
+    <div class="row">
+      <div class="f"><label>Prioridade</label><select id="f_p">${Object.entries(PRIOS).map(([k,v])=>`<option value="${k}" ${k=="MEDIA"?"selected":""}>${v.l}</option>`).join("")}</select></div>
+      <div class="f"><label>Categoria</label><select id="f_c">${CATS.map(c=>`<option>${c}</option>`).join("")}</select></div>
+    </div>
+    <div class="row">
+      <div class="f"><label>Prazo solicitado</label><input type="date" id="f_pz"></div>
+      <div class="f"><label>Responsável</label><input id="f_r" value="${esc(RESP)}"></div>
+    </div>
+    <div class="f"><label>Links relacionados / anexos (URL)</label><input id="f_l" placeholder="https://sharepoint…"></div>
+    <div class="f"><label>Observações</label><input id="f_o"></div>
+  </div>
+  <div class="mf"><button class="btn" onclick="closeM()">Cancelar</button><button class="btn pri" onclick="salvarNova()">Registrar demanda</button></div>`);
+  setTimeout(()=>f_t.focus(),50);
+}
+function salvarNova(){
+  if(!f_t.value.trim()||!f_s.value.trim())return toast("Título e solicitante são obrigatórios.");
+  const d=criar({titulo:f_t.value.trim(),descricao:f_d.value,solicitante:f_s.value.trim(),area:f_a.value,prioridade:f_p.value,categoria:f_c.value,prazo:f_pz.value,responsavel:f_r.value,links:f_l.value,obs:f_o.value});
+  closeM();abrir(d.id);
+}
+
+function abrir(id){
+  const d=DB.demandas.find(x=>x.id===id);if(!d)return;
+  const g=isGestor(),st=STATUS.find(s=>s.k===d.status);
+  const acoes=g?`
+    ${["NOVA","PRIORIZADA","PAUSADA","VALIDACAO"].includes(d.status)?`<button class="btn go" onclick="iniciar(DB.demandas.find(x=>x.id==='${id}'),false);closeM()">${d.sessoes.length?"Retomar":"Iniciar"}</button>`:""}
+    ${d.status==="EXECUCAO"?`<button class="btn warn" onclick="askPausa('${id}')">Pausar</button>`:""}
+    ${d.status==="NOVA"?`<button class="btn" onclick="pri('${id}')">Priorizar</button>`:""}
+    ${!["CONCLUIDA","VALIDACAO"].includes(d.status)?`<button class="btn" onclick="validar(DB.demandas.find(x=>x.id==='${id}'));abrir('${id}')">→ Validação</button>`:""}
+    ${d.status!=="CONCLUIDA"?`<button class="btn ok" onclick="askConcluir('${id}')">Concluir</button>`:""}`:
+    "";
+  M(`<div class="mh"><div><h3><span class="num">${d.id}</span> · ${esc(d.titulo)}</h3>
+    <div class="meta" style="margin-top:6px"><span class="tag" style="border-color:${st.c};color:${st.c}">${st.l}</span>${tags(d)}</div></div>
+    <button class="btn sm" onclick="closeM()">✕</button></div>
+   <div class="mb">
+    <div class="grid2" style="gap:20px">
+     <div><h3 style="font-size:12px;letter-spacing:1px;color:var(--slate);text-transform:uppercase">Dados</h3>
+      <div class="dl">
+        <b>Descrição</b><span>${esc(d.descricao)||"—"}</span>
+        <b>Solicitante</b><span>${esc(d.solicitante)}${d.area?" ("+esc(d.area)+")":""}</span>
+        <b>Responsável</b><span>${esc(d.responsavel)}</span>
+        <b>Solicitada em</b><span class="num">${fmt(d.criadoEm)}</span>
+        <b>Prazo</b><span class="num">${d.prazo?fmtD(d.prazo):"—"} ${atrasada(d)?'<span class="tag late">atrasada</span>':""}</span>
+        <b>Início</b><span class="num">${fmt(d.sessoes[0]?.inicio)}</span>
+        <b>Conclusão</b><span class="num">${fmt(d.concluidoEm)}</span>
+        ${d.resultado?`<b>Entrega</b><span>${esc(d.resultado)}</span>`:""}
+        ${d.links?`<b>Links</b><span>${esc(d.links)}</span>`:""}
+        ${d.obs?`<b>Observações</b><span>${esc(d.obs)}</span>`:""}
+      </div></div>
+     <div><h3 style="font-size:12px;letter-spacing:1px;color:var(--slate);text-transform:uppercase">Tempo</h3>
+      <div style="display:flex;gap:18px;margin-bottom:10px">
+        <div><b class="num" style="font-size:22px;color:var(--exec)">${dur(ativo(d))}</b><div style="font-size:11px;color:var(--slate)">ATIVO</div></div>
+        <div><b class="num" style="font-size:22px;color:var(--pausa)">${dur(pausado(d))}</b><div style="font-size:11px;color:var(--slate)">PAUSADO</div></div>
+        <div><b class="num" style="font-size:22px">${dur(decorrido(d))}</b><div style="font-size:11px;color:var(--slate)">DECORRIDO</div></div>
+      </div>
+      <table style="font-size:12.5px"><thead><tr><th>Sessão</th><th>Início</th><th>Fim</th><th>Duração</th><th>Motivo</th></tr></thead><tbody>
+      ${d.sessoes.map((s,i)=>`<tr><td class="num">${i+1}</td><td class="num">${fmtH(s.inicio)}</td><td class="num">${s.fim?fmtH(s.fim):"—"}</td>
+      <td class="num">${dur((s.fim?D(s.fim):Date.now())-D(s.inicio))}</td><td>${esc(s.motivo||"")}</td></tr>`).join("")||'<tr><td colspan="5" style="color:var(--slate)">Nenhuma sessão iniciada.</td></tr>'}
+      </tbody></table></div>
+    </div>
+    <h3 style="font-size:12px;letter-spacing:1px;color:var(--slate);text-transform:uppercase;margin-top:22px">Histórico (imutável)</h3>
+    <div class="tl" style="padding-left:120px">${d.historico.map(h=>`<div class="ev ${h.tipo==="STATUS"&&h.para==="PAUSADA"?"pz":""}"><div class="hr num" style="left:-120px;width:104px">${fmt(h.ts)}</div>${esc(h.txt)}<div style="font-size:11.5px;color:var(--slate)">${esc(h.usuario)}</div></div>`).join("")}</div>
+    <h3 style="font-size:12px;letter-spacing:1px;color:var(--slate);text-transform:uppercase;margin-top:18px">Comentários</h3>
+    ${d.comentarios.map(c=>`<div style="border-left:3px solid var(--line);padding:4px 10px;margin-bottom:8px"><b style="font-size:12.5px">${esc(c.usuario)}</b> <span class="num" style="font-size:11px;color:var(--slate)">${fmt(c.ts)}</span><div>${esc(c.msg)}</div></div>`).join("")||'<div style="color:var(--slate);font-size:12.5px">Nenhum comentário ainda.</div>'}
+    <div style="display:flex;gap:8px;margin-top:10px"><input id="cm" placeholder="Escreva um comentário para o solicitante…"><button class="btn" onclick="comentar('${id}')">Enviar</button></div>
+   </div>
+   <div class="mf"><button class="btn" style="color:var(--atraso);border-color:#F6D5D2" onclick="askExcluir('${id}')">🗑 Excluir</button><button class="btn" onclick="askEditar('${id}')">✏ Editar</button>${acoes}<button class="btn" onclick="closeM()">Fechar</button></div>`);
+}
+
+function comentar(id){const d=DB.demandas.find(x=>x.id===id),v=cm.value.trim();if(!v)return;
+  d.comentarios.push({usuario:me().n,ts:now(),msg:v});log(d,"COMENTARIO","Comentário adicionado");save();abrir(id);}
+function pri(id){const d=DB.demandas.find(x=>x.id===id);mudarStatus(d,"PRIORIZADA","Demanda priorizada");save();render();abrir(id);}
+
+function askEditar(id){
+  const d=DB.demandas.find(x=>x.id===id);
+  M(`<div class="mh"><h3>Editar <span class="num">${d.id}</span></h3><button class="btn sm" onclick="abrir('${id}')">✕</button></div>
+  <div class="mb">
+    <div class="f"><label>Título</label><input id="et" value="${esc(d.titulo)}"></div>
+    <div class="f"><label>Descrição</label><textarea id="ed">${esc(d.descricao||"")}</textarea></div>
+    <div class="row">
+      <div class="f"><label>Prioridade</label><select id="ep">${Object.entries(PRIOS).map(([k,v])=>`<option value="${k}" ${d.prioridade===k?"selected":""}>${v.l}</option>`).join("")}</select></div>
+      <div class="f"><label>Categoria</label><select id="ec">${CATS.map(c=>`<option ${d.categoria===c?"selected":""}>${c}</option>`).join("")}</select></div>
+    </div>
+    <div class="row">
+      <div class="f"><label>Prazo</label><input type="date" id="epz" value="${d.prazo||""}"></div>
+      <div class="f"><label>Responsável</label><input id="er" value="${esc(d.responsavel||"")}"></div>
+    </div>
+    <div class="f"><label>Área / Solicitante</label><input id="ea" value="${esc(d.area||"")}"></div>
+    <div class="f"><label>Links relacionados</label><input id="el" value="${esc(d.links||"")}"></div>
+    <div class="f"><label>Observações</label><input id="eo" value="${esc(d.obs||"")}"></div>
+    <p style="font-size:12px;color:var(--slate)">Cada campo alterado gera entrada automática no histórico com o valor anterior e o novo.</p>
+  </div>
+  <div class="mf"><button class="btn" onclick="abrir('${id}')">Cancelar</button><button class="btn pri" onclick="salvarEdicao('${id}')">Salvar alterações</button></div>`,"sm");
+}
+function salvarEdicao(id){
+  const d=DB.demandas.find(x=>x.id===id);
+  const mudou=(campo,novo,label)=>{const ant=d[campo]??"";if(String(ant)===String(novo))return;log(d,"EDICAO",`${label}: "${esc(ant)}" → "${esc(novo)}"`,{campo,de:ant,para:novo});d[campo]=novo;};
+  if(!et.value.trim())return toast("Título não pode ficar vazio.");
+  mudou("titulo",et.value.trim(),"Título");mudou("descricao",ed.value,"Descrição");
+  mudou("prioridade",ep.value,"Prioridade");mudou("categoria",ec.value,"Categoria");
+  mudou("prazo",epz.value,"Prazo");mudou("responsavel",er.value,"Responsável");
+  mudou("area",ea.value,"Área");mudou("links",el.value,"Links");mudou("obs",eo.value,"Observações");
+  save();render();abrir(id);toast("Alterações salvas em "+id);
+}
+
+function confirmTroca(cur,nova){
+  M(`<div class="mh"><h3>Existe outra demanda em execução</h3></div><div class="mb">
+    <p><b class="num">${cur.id}</b> — ${esc(cur.titulo)} está rodando há <b class="num">${dur(ativo(cur))}</b>.</p>
+    <p>Só uma demanda pode contar tempo por vez. Ao continuar, ela será pausada e <b class="num">${nova.id}</b> inicia nova sessão.</p>
+    <div class="f"><label>Motivo da pausa de ${cur.id}</label><select id="mt">${MOTIVOS.map(m=>`<option>${m}</option>`).join("")}</select></div></div>
+    <div class="mf"><button class="btn" onclick="closeM()">Manter ${cur.id}</button>
+    <button class="btn go" onclick="trocar('${cur.id}','${nova.id}')">Pausar ${cur.id} e iniciar ${nova.id}</button></div>`,"sm");
+}
+function trocar(a,b){const cur=DB.demandas.find(x=>x.id===a),nv=DB.demandas.find(x=>x.id===b);
+  pausar(cur,mt.value,"Troca para "+b,true);closeM();iniciar(nv,true);}
+
+function askPausa(id){const d=DB.demandas.find(x=>x.id===id);
+  M(`<div class="mh"><h3>Pausar ${d.id}</h3></div><div class="mb">
+    <div class="f"><label>Por que a demanda foi pausada?</label><select id="pm">${MOTIVOS.map(m=>`<option>${m}</option>`).join("")}</select></div>
+    <div class="f"><label>Comentário (opcional)</label><input id="po" placeholder="Ex.: aguardando acesso à base X"></div>
+    <p style="color:var(--slate);font-size:12.5px">A contagem de tempo para agora. Ao retomar, o sistema abre uma nova sessão.</p></div>
+    <div class="mf"><button class="btn" onclick="closeM()">Cancelar</button><button class="btn warn" onclick="doPausa('${id}')">Pausar demanda</button></div>`,"sm");}
+function doPausa(id){pausar(DB.demandas.find(x=>x.id===id),pm.value,po.value);closeM();}
+
+function askConcluir(id){const d=DB.demandas.find(x=>x.id===id);
+  M(`<div class="mh"><h3>Concluir ${d.id}</h3></div><div class="mb">
+    <div class="f"><label>Resultado entregue*</label><textarea id="cr" placeholder="O que foi entregue e como o solicitante acessa"></textarea></div>
+    <div class="f"><label>Link do resultado</label><input id="cl" placeholder="https://…"></div>
+    <div class="f"><label>Observações finais</label><input id="co"></div>
+    <p style="font-size:12.5px;color:var(--slate)">Serão gravados: ativo <b class="num">${dur(ativo(d))}</b> · pausado <b class="num">${dur(pausado(d))}</b> · decorrido <b class="num">${dur(decorrido(d))}</b>.</p></div>
+    <div class="mf"><button class="btn" onclick="closeM()">Cancelar</button><button class="btn ok" onclick="doConcluir('${id}')">Concluir demanda</button></div>`,"sm");}
+function doConcluir(id){const d=DB.demandas.find(x=>x.id===id);if(!cr.value.trim())return toast("Descreva o resultado entregue.");concluir(d,cr.value,co.value,cl.value);closeM();}
+
+function csv(rows){return "\uFEFF"+rows.map(r=>r.map(c=>`"${String(c??"").replace(/"/g,'""')}"`).join(";")).join("\n");}
+function baixar(nome,txt){const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([txt],{type:"text/csv;charset=utf-8"}));a.download=nome;a.click();}
+function exportar(tipo){
+  const l=base();
+  if(tipo==="demandas"){baixar("demandas.csv",csv([["ID","Titulo","Descricao","Solicitante","Area","Responsavel","Prioridade","Categoria","Status","Criado em","Prazo","Inicio","Conclusao","Tempo ativo (h)","Tempo pausado (h)","Decorrido (h)","Sessoes","Atrasada","Resultado"],
+    ...l.map(d=>[d.id,d.titulo,d.descricao,d.solicitante,d.area,d.responsavel,PRIOS[d.prioridade].l,d.categoria,lbl(d.status),fmt(d.criadoEm),d.prazo,fmt(d.sessoes[0]?.inicio),fmt(d.concluidoEm),(ativo(d)/36e5).toFixed(2),(pausado(d)/36e5).toFixed(2),(decorrido(d)/36e5).toFixed(2),d.sessoes.length,atrasada(d)?"SIM":"NAO",d.resultado||""])]));}
+  else{baixar("historico.csv",csv([["ID","Data/hora","Tipo","Evento","Usuario","De","Para"],
+    ...l.flatMap(d=>d.historico.map(h=>[d.id,fmt(h.ts),h.tipo,h.txt,h.usuario,h.de||"",h.para||""]))]));}
+  toast("Arquivo gerado — pronto para o Power BI.");
+}
+
+/* ============ EXCLUSÃO ============ */
+function askExcluir(id){
+  const d=DB.demandas.find(x=>x.id===id);if(!d)return;
+  M(`<div class="mh"><h3>Excluir demanda</h3><button class="btn sm" onclick="closeM()">X</button></div>
+  <div class="mb">
+    <p>Você está prestes a excluir <b class="num">${d.id}</b> — <b>${esc(d.titulo)}</b>.</p>
+    <p style="color:var(--slate);font-size:13px">A demanda some do painel, mas um log de auditoria fica salvo.</p>
+    <div style="background:#FDEDEC;border:1px solid #F6D5D2;border-radius:8px;padding:12px;font-size:12.5px;color:var(--atraso)">
+      Ação irreversível.
+    </div>
+  </div>
+  <div class="mf">
+    <button class="btn" onclick="closeM()">Cancelar</button>
+    <button class="btn" style="background:var(--atraso);border-color:var(--atraso);color:#fff" onclick="confirmarExclusao('${id}')">Excluir</button>
+  </div>`,"sm");
+}
+function confirmarExclusao(id){
+  const d=DB.demandas.find(x=>x.id===id);if(!d)return;
+  if(!DB.lixeira)DB.lixeira=[];
+  DB.lixeira.push({excluidoEm:now(),excluidoPor:me().n,id:d.id,titulo:d.titulo,
+    solicitante:d.solicitante,prioridade:d.prioridade,categoria:d.categoria,
+    status:d.status,criadoEm:d.criadoEm,prazo:d.prazo,concluidoEm:d.concluidoEm,
+    tempoAtivoMin:Math.round(ativo(d)/60000),sessoes:d.sessoes.length});
+  DB.demandas=DB.demandas.filter(x=>x.id!==id);
+  save();closeM();render();toast("Demanda "+id+" excluida — log salvo.");
+}
+function askZerarTudo(){
+  M(`<div class="mh"><h3>Zerar todos os dados</h3><button class="btn sm" onclick="closeM()">X</button></div>
+  <div class="mb">
+    <p>Remove todas as <b>${DB.demandas.length} demanda(s)</b> do painel de uma vez.</p>
+    <p style="color:var(--slate);font-size:13px">O log de auditoria fica salvo e pode ser consultado depois.</p>
+    <div style="background:#FDEDEC;border:1px solid #F6D5D2;border-radius:8px;padding:12px;font-size:12.5px;color:var(--atraso)">
+      Acao irreversivel. O sistema ficara zerado e pronto para uso real.
+    </div>
+    <div class="f" style="margin-top:14px"><label>Digite CONFIRMAR para liberar o botao</label>
+    <input id="conf_input" oninput="document.getElementById('btn_zerar').disabled=this.value!='CONFIRMAR';document.getElementById('btn_zerar').style.opacity=this.value=='CONFIRMAR'?'1':'.4'" placeholder="CONFIRMAR"></div>
+  </div>
+  <div class="mf">
+    <button class="btn" onclick="closeM()">Cancelar</button>
+    <button id="btn_zerar" class="btn" style="background:var(--atraso);border-color:var(--atraso);color:#fff;opacity:.4" disabled onclick="confirmarZerar()">Zerar tudo</button>
+  </div>`,"sm");
+}
+function confirmarZerar(){
+  if(!DB.lixeira)DB.lixeira=[];
+  DB.demandas.forEach(d=>DB.lixeira.push({excluidoEm:now(),excluidoPor:me().n+" (limpeza geral)",
+    id:d.id,titulo:d.titulo,solicitante:d.solicitante,prioridade:d.prioridade,
+    categoria:d.categoria,status:d.status,criadoEm:d.criadoEm,prazo:d.prazo,
+    concluidoEm:d.concluidoEm,tempoAtivoMin:Math.round(ativo(d)/60000),sessoes:d.sessoes.length}));
+  const total=DB.demandas.length;
+  DB.demandas=[];DB.seq=0;
+  save();closeM();render();toast(total+" demanda(s) removidas. Sistema zerado!");
+}
+function vLog(){
+  const l=DB.lixeira||[];
+  return `<h2 class="page">Log de exclusoes</h2><p class="sub">${l.length} registro(s) de auditoria — nunca apagados.</p>
+  <div class="panel" style="overflow:auto"><table><thead><tr><th>ID</th><th>Titulo</th><th>Solicitante</th><th>Status</th><th>Categoria</th><th>Tempo ativo</th><th>Excluido em</th><th>Por</th></tr></thead><tbody>
+  ${l.slice().reverse().map(r=>`<tr>
+    <td class="num">${r.id}</td><td>${esc(r.titulo)}</td><td>${esc(r.solicitante)}</td>
+    <td>${esc(r.status)}</td><td>${esc(r.categoria)}</td>
+    <td class="num">${pad(Math.floor(r.tempoAtivoMin/60))}h${pad(r.tempoAtivoMin%60)}</td>
+    <td class="num">${fmt(r.excluidoEm)}</td><td>${esc(r.excluidoPor)}</td>
+  </tr>`).join("")||'<tr><td colspan="8"><div class="empty">Nenhuma exclusao registrada ainda.</div></td></tr>'}
+  </tbody></table></div>`;
+}
+
+
+
+(async()=>{await load();render();})();
+</script>
